@@ -1,0 +1,41 @@
+version: '3.1'
+
+services:
+  db:
+    image: mariadb:10.6
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: notSecureChangeMe
+
+  phpmyadmin:
+    image: phpmyadmin
+    restart: always
+    deploy:
+      mode: "replicated"
+      replicas: 1
+    ports:
+      - "8282:80"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.phpmyadmin.rule=Host(`mihostprueba.com`)"
+      - "traefik.http.routers.phpmyadmin.entrypoints=web"
+      - "traefik.http.services.phpmyadmin.loadbalancer.server.port=80"
+      - "traefik.http.routers.phpmyadmin.service=phpmyadmin"
+     # - "traefik.http.routers.phpmyadmin.tls.certresolver=mydockerconfig" esto para certificados acme por si necesita
+      - "traefik.http.routers.phpmyadmin.tls=true"
+
+    networks:
+      - "traefik_public"
+      - "phpmyadmin_default"
+    environment:
+      - PMA_ARBITRARY=1
+networks:
+  phpmyadmin_default:
+    external: true
+  traefik_public:
+    external: true
+volumes:
+  phpmyadmin_volume:
+    name: "phpmyadmin_volume"
+    external: true
+  
