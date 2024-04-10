@@ -1,0 +1,69 @@
+version: "3.3"
+
+services:
+
+  traefik:
+    image: "traefik:v2.11"
+    container_name: "traefik"
+    ports:
+      - "80:80"
+      - "8080:8080"
+      - "443:443"
+    command:
+      - "--api.insecure=true"
+      - "--api.dashboard=true"
+      - "--log.level=DEBUG"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"  
+      - "--certificatesresolvers.mydockerconfig.acme.httpchallenge=true"
+      - "--certificatesresolvers.mydockerconfig.acme.tlschallenge=true"
+      - "--certificatesresolvers.mydockerconfig.acme.email=rainex.227@gmail.com"
+      - "--certificatesresolvers.mydockerconfig.acme.storage=/letsencrypt/acme.json" 
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "providers.docker=true"
+      - "--providers.file.filename=/dynamic.yaml"
+      - "--providers.docker.swarmMode=true"
+      - "--providers.docker.network=traefik_public"
+      - "--providers.docker.endpoint=unix://var/run/docker.sock"
+    labels:
+      - "traefik.http.routers.traefik.rule=Host(`traefik.yourdomain.com`)"
+      - "traefik.http.routers.traefik.entrypoints=web"
+      - "traefik.http.services.traefik.loadbalancer.server.port=8080"
+      - "traefik.http.routers.traefik.service=api@internal"
+    networks:
+      - traefik_public
+    volumes:
+      - "traefik_certificates:/letsencrypt"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+      - "./dinamic.yaml:/dynamic.yaml"
+    #deploy:
+      #mode: "replicated "
+      #replicas: 1
+      #resources:
+        #limits:
+          #cpus: "0.25"
+          #memory: "300M"
+    #placement:
+      #contrains: [node.hostname==manager]
+
+  #whoami:
+  #  image: "traefik/whoami"
+  #  container_name: "simple-service"
+  #  labels:
+  #    - "traefik.enable=true"
+  #    - "traefik.http.routers.whoami.rule=Host(`whoami.example.com`)"
+  #    - "traefik.http.routers.whoami.entrypoints=websecure"
+  #    - "traefik.http.serviceswhoami.loadbalancer.server.port=80"
+  #    - "traefik.http.routers.whoami.service=whoami"
+  #    - "traefik.http.routers.phpmyadmin.tls=true"
+volumes:
+  traefik_certificates:
+    name: "traefik_certificates"
+    external: true
+networks:
+  traefik_public:
+    external: true
+    #driver: overlay
+    #name: trafic_public2
+   # attachable: true
